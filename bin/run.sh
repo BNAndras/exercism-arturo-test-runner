@@ -31,9 +31,10 @@ mkdir -p "${output_dir}"
 
 echo "${slug}: testing..."
 
-tmp_dir=$(mktemp -d -t "exercism-verify-${slug}-XXXXX")
-
+tmp_dir="/tmp/exercism-verify-${slug}-$$-$(date +%s)"
+mkdir -p "${tmp_dir}"
 trap 'rm -rf "$tmp_dir"' EXIT
+
 cp -r "${solution_dir}/." "${tmp_dir}"
 cd "${tmp_dir}"
 

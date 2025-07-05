@@ -1,19 +1,19 @@
-FROM nimlang/nim:2.2.4-ubuntu-slim
+FROM alpine:3.22.0
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && \
-    apt-get install -y jq build-essential git libgtk-3-dev libwebkit2gtk-4.0-dev libmpfr-dev && \
-    apt-get purge --auto-remove && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN git clone https://github.com/arturo-lang/arturo.git
-
-RUN cd arturo && ./build.nims build --install --log && \
-    cd .. && rm -rf arturo
-
-ENV PATH="/root/.arturo/bin:${PATH}"
+RUN apk add --no-cache \
+    jq \
+    bash \
+    wget \
+    unzip \
+    gcompat \
+    mpfr-dev \
+    webkit2gtk-4.1-dev \
+    pcre-dev && \
+    wget -O arturo.zip "https://github.com/arturo-lang/nightly/releases/download/2025-07-04/arturo-nightly.2025-07-03-amd64-linux-full.zip" && \
+    unzip arturo.zip && \
+    mv arturo /usr/local/bin/arturo && \
+    chmod +x /usr/local/bin/arturo && \
+    rm arturo.zip
 
 RUN arturo --package install unitt 2.0.1
 
