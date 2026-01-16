@@ -26,7 +26,6 @@ solution_dir=$(realpath "${2%/}")
 output_dir=$(realpath "${3%/}")
 results_file="${output_dir}/results.json"
 
-# Create the output directory if it doesn't exist
 mkdir -p "${output_dir}"
 
 echo "${slug}: testing..."
@@ -38,36 +37,32 @@ cp -r "${solution_dir}/." "${tmp_dir}"
 cd "${tmp_dir}"
 test_file="tests/test-${slug}.art"
 sed -i -E 's/(test|it).skip/\1/g' "${test_file}"
-# Capture the output of the test run in case of failure or error
+
+# Run the Arturo tester, capturing output
+echo "Running tests via Arturo..."
 test_output=$(arturo tester.art 2>&1)
 
-# Tweak the generated test file structure to valid Arturo code 
-sed -i \
-    -e 's/specs: \[/specs: @[/g' \
-    -e 's/tests: \[/tests: @[/g' \
-    -e 's/assertions: \[/assertions: @[@/g' ".unitt/tests/test-${slug}.art"
 
-# Check whether an error or failure occurred so we can pipe the captured output appropriately.
-cat > check-test-run-success.art << 'EOF'
-if empty? arg -> panic.unstyled.code:2 ""
-resultFile: ~".unitt/tests/test-|arg\0|.art"
-if not? file? resultFile -> panic.code:2 ""
-do resultFile
-if empty? specs -> panic.unstyled.code:1 ""
-testStatuses: flatten map specs 'describe ->
-                fold.seed:@[] describe\tests [acc test] ->
-                    append acc test\assertions\0\1
-if not? all? testStatuses -> panic.unstyled ""
-EOF
 
-arturo check-test-run-success.art "${slug}"
-result=$?
-if [ $result -eq 1 ]; then
-    jq -n --arg output "${test_output}" '{version: 1, status: "fail", message: $output}' > "${results_file}"
-elif [ $result -eq 2 ]; then
-    jq -n --arg output "${test_output}" '{version: 1, status: "error", message: $output}' > "${results_file}"
-else
-    jq -n '{version: 1, status: "pass"}' > "${results_file}"
+RUNNER_PATH="/opt/test-runner/src/test.py"
+if [ ! -f "$RUNNER_PATH" ]; then
+    # Fallback for local testing relative to bin/
+    RUNNER_PATH="$(dirname "$0")/../src/test.py"
 fi
 
-echo "${slug}: done"
+
+python3 "$RUNNER_PATH" "${test_file}" ".unitt/tests/test-${slug}.art" "${test_output}"
+
+if [ -f results.json ]; then
+    # If status is error and message is null, replace with test_output
+    jq --arg output "${test_output}" \
+       'if .status == "error" and .message == null then .message = $output else . end' \
+       results.json > results.tmp.json && mv results.tmp.json results.json
+    
+    mv results.json "${results_file}"
+    echo "${slug}: done (results written)"
+else
+    echo "Error: results.json was not generated."
+    exit 1
+fi
+

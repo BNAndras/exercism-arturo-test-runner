@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "status": "fail",
+  "tests": [
+    {
+      "name": "a year not divisible by 4 is a common year",
+      "test_code": "expects.be:'false? @[isLeap? 2015]",
+      "status": "pass",
+      "message": null
+    },
+    {
+      "name": "a year divisible by 4 and not divisible by 100 is a leap year",
+      "test_code": "expects.be:'true? @[isLeap? 1996]",
+      "status": "error",
+      "message": "Test was not found in validation results."
+    }
+  ]
+}
