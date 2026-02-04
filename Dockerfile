@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:trixie-20260202-slim
 
 RUN apt-get update \
     # Install required build and runtime dependencies
@@ -20,7 +20,6 @@ RUN apt-get update \
     && apt-get purge --auto-remove -y wget unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    # Remove icons/docs to save space
     && rm -rf /usr/share/icons /usr/share/doc /usr/share/man
 
 WORKDIR /opt/test-runner
