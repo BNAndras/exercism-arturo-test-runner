@@ -1,4 +1,4 @@
-FROM debian:trixie-20260202-slim
+FROM python:3.13.11-slim-trixie
 
 RUN apt-get update \
     # Install required build and runtime dependencies
@@ -6,8 +6,6 @@ RUN apt-get update \
     wget \
     unzip \
     libmpfr6 \
-    python3 \
-    python3-pyparsing \
     libwebkit2gtk-4.1-0 \
     ca-certificates \
     # Fetch pre-built release and install it
@@ -23,6 +21,9 @@ RUN apt-get update \
     && rm -rf /usr/share/icons /usr/share/doc /usr/share/man
 
 WORKDIR /opt/test-runner
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY bin/run.sh bin/run.sh
 COPY src src
 ENTRYPOINT ["/opt/test-runner/bin/run.sh"]

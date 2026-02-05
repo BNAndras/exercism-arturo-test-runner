@@ -21,9 +21,14 @@ if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
     exit 1
 fi
 
+# Helper to resolve absolute path
+resolve_path() {
+    python3 -c "import os, sys; print(os.path.realpath(sys.argv[1]))" "$1"
+}
+
 slug="$1"
-solution_dir=$(realpath "${2%/}")
-output_dir=$(realpath "${3%/}")
+solution_dir=$(resolve_path "${2%/}")
+output_dir=$(resolve_path "${3%/}")
 results_file="${output_dir}/results.json"
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 src_dir="${script_dir}/../src"
@@ -32,7 +37,8 @@ mkdir -p "${output_dir}"
 
 echo "${slug}: testing..."
 
-tmp_dir=$(mktemp -d -t "exercism-verify-${slug}-XXXXX")
+# Use a standard template in /tmp
+tmp_dir=$(mktemp -d "/tmp/exercism-verify-${slug}-XXXXXX")
 
 trap 'rm -rf "$tmp_dir"' EXIT
 cp -r "${solution_dir}/." "${tmp_dir}"
@@ -42,6 +48,7 @@ cd "${tmp_dir}"
 test_file="tests/test-${slug}.art"
 sed -i -E 's/(test|it).skip/\1/g' "${test_file}"
 
+# Run unitt directly to avoid nested arturo/process execution issues on Alpine
 test_output=$(arturo tester.art 2>&1)
 test_filename=$(basename "${test_file}")
 result_art_file=".unitt/tests/${test_filename}"
